@@ -65,19 +65,25 @@ def draw_grid_internal(graph):
 
 
 def getColor(prob):
-    # Smooth gradient from green (0.0) to red (1.0)
+    # Special case: exactly 0 probability
+    if prob == 0.0:
+        return cnt.GRAY  # Or (128, 128, 128) if cnt.GRAY isn't defined
+
+    # Clamp probability between 0 and 1 (excluding 0 now)
+    prob = max(0.0001, min(1.0, prob))  # Using 0.0001 to avoid log(0) if needed
+
+    # Smooth gradient from green (low) to red (high)
     if prob < 0.5:
-        # Green to yellow transition (0.0-0.5)
-        red = int(255 * (prob * 2))  # 0 → 255
-        green = 255  # 255 → 255
+        # Green (0,255,0) to yellow (255,255,0)
+        red = int(510 * prob)  # 510 = 255*2
+        green = 255
     else:
-        # Yellow to red transition (0.5-1.0)
-        red = 255  # 255 → 255
-        green = int(255 * ((1 - prob) * 2))  # 255 → 0
+        # Yellow (255,255,0) to red (255,0,0)
+        red = 255
+        green = int(510 * (1 - prob))  # 510 = 255*2
 
-    color = (red, green, 0)
-    # Optional: Add minimum brightness for visibility
-    if sum(color) < 150:  # If too dark
-        color = (min(255, red + 50), min(255, green + 50), 0)
+    # Clamp values (shouldn't be needed but safe)
+    red = max(0, min(255, red))
+    green = max(0, min(255, green))
 
-    return color
+    return red, green, 0

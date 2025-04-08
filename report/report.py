@@ -5,16 +5,17 @@ from game.auto_game import auto_game
 
 
 class DataService:
-    def __init__(self, isGenerateData: bool):
+    def __init__(self, isGenerateData: bool, points):
         """
         Initialize by reading data from file
         """
         file_path = os.path.join(os.getcwd(), "report", "data.txt")
         self.df = self._read_data_file(file_path)
+        self.points = points
         self.isGenerateData = isGenerateData
 
     def generate_data(self):
-        points = 10
+        points = self.points
         file = open(os.getcwd() + "\\report\\data.txt", 'a+')
         for alpha in [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1] * points:
             for isRatMoving in [True, False]:
