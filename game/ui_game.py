@@ -42,8 +42,8 @@ def ui_game(alpha: float, bot_type, is_rat_moving, isUseIpCells: bool = False, i
                         cnt.SCREEN_SIZE[1] - 10:
                     if graph.game_over:
                         graph = g.getGraph(screen, bot_type, alpha, is_rat_moving, isUseIpCells, isUsePresetPos)
-                    else:
-                    # while not graph.game_over:
+                    # else:
+                    while not graph.game_over:
                         draw_grid(screen, graph, graph.n)
                         graph.proceed()
                         time.sleep(cnt.TIME_RATE)

@@ -34,21 +34,18 @@ def draw_grid(screen, game, n):
             if game.currBot:
                 if game.currBot.path and node in game.currBot.path:
                     color = cnt.PURPLE
+                if node in game.currBot.bot_candidate_nodes:
+                    color = cnt.YELLOW
+                if node == game.currBot.position:
+                    color = cnt.BLUE
+
             if node == game.curr_rat_pos:
                 color = cnt.BROWN
-            elif game.currBot and node in game.currBot.bot_candidate_nodes:
-                color = cnt.YELLOW
-            if game.currBot and node == game.currBot.position:
-                color = cnt.BLUE
-            elif node == game.curr_bot_pos:
+            elif node == game.curr_bot_pos:  # BOT position highlight when not known
                 color = cnt.BLUE
 
-            try:
-                pygame.draw.rect(screen, color, (x, y, cnt.CELL_SIZE, cnt.CELL_SIZE))
-                pygame.draw.rect(screen, cnt.GRAY, (x, y, cnt.CELL_SIZE, cnt.CELL_SIZE), 1)
-            except ValueError:
-                print(color)
-                raise ValueError
+            pygame.draw.rect(screen, color, (x, y, cnt.CELL_SIZE, cnt.CELL_SIZE))
+            pygame.draw.rect(screen, cnt.GRAY, (x, y, cnt.CELL_SIZE, cnt.CELL_SIZE), 1)
 
     # Rest of your code remains the same...
     pygame.draw.rect(screen, cnt.BLUE, (cnt.SCREEN_SIZE[0] // 2 - 50, cnt.SCREEN_SIZE[1] - 40, 100, 30))
