@@ -58,33 +58,20 @@ class ManhattanGraph:
             return
         elif self.step == 2:
             dg.draw_grid_internal(self)
-            self.bot_candidate_nodes = set(self.currently_open)  # All open cells are initial candidates
-            self.curr_bot_pos = random.choice(list(self.bot_candidate_nodes))
+            currBot = RobotGateway(self, None, cnt.CURRENT_BOT)
+            currBot.bot_candidate_nodes = set(self.currently_open)  # All open cells are initial candidates
+            self.currBot = currBot
+            self.curr_bot_pos = random.choice(list(self.currBot.bot_candidate_nodes))
             self.step = 3
             return
         elif self.step == 3:
-            while len(self.bot_candidate_nodes) > 1:
-                if self.t % 2 == 0:
-                    # Elimination phase
-                    self.eliminate_candidates_on_blocked_neighbours()
-                else:
-                    # Movement phase - move to any open neighbor
-                    open_neighbors = HelperService.getOpenNeighbourListForNode(
-                        self, self.curr_bot_pos, isIgnoreDiagonals=True)
-
-                    if not open_neighbors:
-                        raise ValueError("Bot is trapped!")
-
-                    self.curr_bot_pos = random.choice(open_neighbors)
-                self.t += 1
-                time.sleep(cnt.TIME_RATE)
-            currBot = RobotGateway(self, self.curr_bot_pos, cnt.CURRENT_BOT)
+            self.currBot.position = self.currBot.getBotPosition()
             self.t = 0
             self.step = 4
             self.placeSpaceRat()
-            self.currBot = currBot
             return
         elif self.step == 4:
+            # return
             self.curr_bot_pos = None  # Moving to Bot1 / Bot2 logic
             if self.currBot.rat_probability[self.curr_rat_pos] == 0:
                 raise ValueError("Rat probability zero error")
@@ -116,26 +103,6 @@ class ManhattanGraph:
         dg.draw_grid_internal(self)
         return
 
-    def eliminate_candidates_on_blocked_neighbours(self):
-        if not self.bot_candidate_nodes:
-            return
-
-        # Get blocked count for current position
-        current_blocked = 8 - len(HelperService.getOpenNeighbourListForNode(
-            self, self.curr_bot_pos))
-
-        new_candidates = set()
-        for node in self.bot_candidate_nodes:
-            node_blocked = 8 - len(HelperService.getOpenNeighbourListForNode(
-                self, node))
-            if node_blocked == current_blocked:
-                new_candidates.add(node)
-
-        # Always include current position if it would have been eliminated
-        if self.curr_bot_pos not in new_candidates:
-            new_candidates.add(self.curr_bot_pos)
-        self.bot_candidate_nodes = new_candidates
-
     def placeSpaceRat(self):
         rat_candidates = self.currently_open.copy()
         rat_candidates.remove(self.curr_bot_pos)
@@ -146,7 +113,6 @@ class ManhattanGraph:
         probability = sum(self.currBot.rat_probability.values())
         rounded_probability = round(probability, 5)
         return rounded_probability == 1.0, rounded_probability
-
 
 def getGraph(screen, bot_type, alpha, is_rat_moving, isUseIpCells: bool = False, isUsePresetPos: bool = False):
     graph = ManhattanGraph(screen=screen, n =cnt.GRID_SIZE, alpha=alpha, bot_type=bot_type, is_rat_moving = is_rat_moving, isUseIpCells=isUseIpCells,

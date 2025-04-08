@@ -36,7 +36,7 @@ def draw_grid(screen, game, n):
                     color = cnt.PURPLE
             if node == game.curr_rat_pos:
                 color = cnt.BROWN
-            elif node in game.bot_candidate_nodes:
+            elif game.currBot and node in game.currBot.bot_candidate_nodes:
                 color = cnt.YELLOW
             if game.currBot and node == game.currBot.position:
                 color = cnt.BLUE

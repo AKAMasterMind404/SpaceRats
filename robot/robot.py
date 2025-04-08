@@ -1,9 +1,12 @@
 import math
+import random
+import time
 from abc import abstractmethod
 import networkx as nx
 from helpers.draw_grid import draw_grid_internal
 from graph.djikstras import compatibleGraph, djikstras, getPathFromATOB
 from helpers.generic import HelperService
+import constants as cnt
 
 
 class Robot:
@@ -16,6 +19,7 @@ class Robot:
         self.isRatMoving = ship.is_rat_moving
         self.rat_probability = {}  # KB: Maps cells to rat probabilities
         self.initialize_rat_probabilities()
+        self.bot_candidate_nodes = dict()
 
     def moveBot(self):
         if self.path is None:
@@ -38,6 +42,46 @@ class Robot:
     @abstractmethod
     def useDetector(self):
         pass
+
+    def getBotPosition(self):
+        while len(self.bot_candidate_nodes) > 1:
+            if self.ship.t % 2 == 0:
+                # Elimination phase
+                self.eliminate_candidates_on_blocked_neighbours()
+            else:
+                # Movement phase - move to any open neighbor
+                open_neighbors = HelperService.getOpenNeighbourListForNode(
+                    self.ship, self.ship.curr_bot_pos, isIgnoreDiagonals=True)
+
+                if not open_neighbors:
+                    raise ValueError("Bot is trapped!")
+                self.ship.curr_bot_pos = random.choice(open_neighbors)
+            draw_grid_internal(self.ship)
+            time.sleep(1)
+            self.ship.t += 1
+
+        time.sleep(cnt.TIME_RATE)
+        return list(self.bot_candidate_nodes)[0]
+
+    def eliminate_candidates_on_blocked_neighbours(self):
+        if not self.bot_candidate_nodes:
+            return
+
+        # Get blocked count for current position
+        current_blocked = 8 - len(HelperService.getOpenNeighbourListForNode(
+            self.ship, self.ship.curr_bot_pos))
+
+        new_candidates = set()
+        for node in self.bot_candidate_nodes:
+            node_blocked = 8 - len(HelperService.getOpenNeighbourListForNode(
+                self.ship, node))
+            if node_blocked == current_blocked:
+                new_candidates.add(node)
+
+        # Always include current position if it would have been eliminated
+        if self.ship.curr_bot_pos not in new_candidates:
+            new_candidates.add(self.ship.curr_bot_pos)
+        self.bot_candidate_nodes = new_candidates
 
     def initialize_rat_probabilities(self):
         """Initialize uniform probabilities for all open cells (except bot's position)."""
