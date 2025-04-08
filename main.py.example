@@ -1,0 +1,25 @@
+from game.ui_game import ui_game
+from dataGenAndPlotGeneral import Result
+import constants as cnt
+
+if __name__ == "__main__":
+    isGenerateData = False
+    isPlotData = True
+
+    if isPlotData:
+        Result.analyzeTimeStepsVsQ()
+        Result.analyzeBotWinVsQ()
+        print("Data gen started....")
+    elif isGenerateData:
+        recordsToFill = 100
+        Result.generate_uniform_data(cnt.IS_VARIABLE_GRAPH, recordsToFill)
+        print("Data gen finished....")
+    else:
+        # You can choose to start an automatic simulation or a UI simulation
+        # isUseIpCells if set to True, shall use a pre-defined set of graph
+        # else, we generate a random graph in every run. isUsePresetPos parameter is used
+        # if we wish to use the preset values of fire, bot, button positions.
+        # Preset values can be found in root/graph/sample/sample1.py
+
+        # g = auto_game(q=cnt.FLAMMABILITY, bot_type=cnt.CURRENT_BOT, isUseIpCells=True)
+        g = ui_game(q=cnt.FLAMMABILITY, bot_type=cnt.CURRENT_BOT, isUseIpCells=True, isUsePresetPos=True)

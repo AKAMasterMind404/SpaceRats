@@ -1,0 +1,11 @@
+from dataGenAndPlotWinnability import Winnability
+
+if __name__ == "__main__":
+    isGenerateData = False
+    if isGenerateData:
+        recordsToFill = 50
+        data = Winnability.generateWinnabilityDataWithFixedPos(recordsToFill)
+    else:
+        bot_winnability = Winnability.plotWinnability()
+        bot_success_rate = Winnability.plotWinRateForBots()
+    print("Data gen finished....")
