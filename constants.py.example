@@ -1,13 +1,16 @@
-IS_VARIABLE_GRAPH = False
-ALPHA = 0.8
 K_DEBUG_MODE = False
-CURRENT_BOT = 1 # 1 = Dumbest, 2 = Common Sense, 3 = Smart, 4 = Smartest
-FLAMMABILITY = 0.1 # 0 = MOST RESISTANT TO FIRE, 1 = LEAST RESISTANT TO FIRE
-TIME_RATE = 0 # SECONDS OF WAIT BETWEEN EACH T
+CURRENT_BOT = 2  # 1 = Dumbest, 2 = Senses 5 times before making a move
+ALPHA = 0.1  # 0 = MOST RESISTANT TO FIRE, 1 = LEAST RESISTANT TO FIRE
+TIME_RATE = 0.1 # SECONDS OF WAIT BETWEEN EACH T
+IS_RAT_MOVING = False
+
+# CELL STATES
+CELL_CLOSED = 1
+CELL_OPENED = 0
 
 CURR_SAMPLE_SET = 1
 
-GRID_SIZE = 40  # Default value, will update dynamically
+GRID_SIZE = 30  # Default value, will update dynamically
 MARGIN = 2  # Space between cells
 HEADER_HEIGHT = 50  # Space for text and buttons
 WINDOW_WIDTH, WINDOW_HEIGHT = 800, 800  # Default window size
@@ -24,8 +27,10 @@ D3_ORANGE = (255, 100, 0)
 GREEN = (0, 255, 0)
 GRAY = (99, 102, 106)
 BLUE = (0, 100, 255)
-PURPLE = (128,0,128)
+BROWN = (101, 67, 33)
+PURPLE = (128, 0, 128)
 LIGHT_BLUE = (173, 216, 230)
+
 
 def update_grid_constants(n, screen_width, screen_height):
     global CELL_SIZE, SCREEN_SIZE
@@ -38,6 +43,7 @@ def update_grid_constants(n, screen_width, screen_height):
     SCREEN_SIZE = (n * (CELL_SIZE + MARGIN), n * (CELL_SIZE + MARGIN) + HEADER_HEIGHT)
 
     return CELL_SIZE, SCREEN_SIZE
+
 
 # Initialize with default values
 CELL_SIZE, SCREEN_SIZE = update_grid_constants(GRID_SIZE, WINDOW_WIDTH, WINDOW_HEIGHT)
