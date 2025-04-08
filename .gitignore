@@ -9,4 +9,4 @@ variable-graph-result/*
 /graph/sample/__pycache__
 win.py
 winnability-result/*
-/report
+/report/data.txt
