@@ -3,15 +3,20 @@ from game.ui_game import ui_game
 from report.report import DataService
 
 if __name__ == "__main__":
-    isGenerateData = None # Make this None for UI GAME
-    points = 1
-    service = DataService(isGenerateData, points)
+    # Configuration
+    points = 50  # Runs per parameter combination
+    generate_data = False # Set to False for plotting
 
-    if service.isGenerateData is None:
-        g = ui_game(alpha=cnt.ALPHA, bot_type=cnt.CURRENT_BOT, isUseIpCells=True, is_rat_moving=cnt.IS_RAT_MOVING)
-    elif service.isGenerateData:
-        service.generate_data()
+    if generate_data is None:
+        g = ui_game(alpha=cnt.ALPHA, bot_type=cnt.CURRENT_BOT,
+                    isUseIpCells=True, is_rat_moving=cnt.IS_RAT_MOVING)
+    elif generate_data:
+        # Generate new data
+        service = DataService(isGenerateData=True, points=points)
+        service.generateDataParalelly()
     else:
-        service.plot_moving_rat()  # Graph1
-        service.plot_stationary_rat()  # Graph2
-        service.plot_combined()  # Graph3
+        # Plot existing data
+        service = DataService(isGenerateData=False, points=0)
+        # service.plot_combined()  # All conditions
+        service.plot_moving_rat() # Just moving rat
+        # service.plot_stationary_rat() # Just stationary rat
