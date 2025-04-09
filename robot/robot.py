@@ -57,7 +57,7 @@ class Robot:
                     raise ValueError("Bot is trapped!")
                 self.ship.curr_bot_pos = random.choice(open_neighbors)
             draw_grid_internal(self.ship)
-            time.sleep(1)
+            time.sleep(cnt.TIME_RATE)
             self.ship.t += 1
 
         time.sleep(cnt.TIME_RATE)

@@ -1,28 +1,83 @@
+import multiprocessing
+from tqdm import tqdm
+import os
 import matplotlib.pyplot as plt
 import pandas as pd
-import os
 from game.auto_game import auto_game
 
+def worker(args):
+    """Standalone worker function for parallel processing"""
+    try:
+        alpha, bot, is_rat_moving = args
+        g = auto_game(alpha=alpha, bot_type=bot, isUseIpCells=True, is_rat_moving=is_rat_moving)
+        return f"{g.t},{alpha},{bot},{is_rat_moving}\n"
+    except Exception as e:
+        print(f"Error with {args}: {str(e)}")
+        return ""
 
 class DataService:
-    def __init__(self, isGenerateData: bool, points):
+    def __init__(self, isGenerateData: bool, points: int):
         """
-        Initialize by reading data from file
+        Initialize data service
+        :param isGenerateData: True to generate data, False to plot
+        :param points: Number of runs per parameter combination
         """
-        file_path = os.path.join(os.getcwd(), "report", "data.txt")
-        self.df = self._read_data_file(file_path)
         self.points = points
         self.isGenerateData = isGenerateData
 
-    def generate_data(self):
-        points = self.points
-        file = open(os.getcwd() + "\\report\\data.txt", 'a+')
-        for alpha in [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1] * points:
-            for isRatMoving in [True, False]:
-                for bot in [1, 2]:
-                    g = auto_game(alpha=alpha, bot_type=bot, isUseIpCells=True, is_rat_moving=isRatMoving)
-                    file.write(f"{g.t}, {alpha}, {bot}, {isRatMoving}\n")
-                    print(f"{g.t}, {alpha}, {bot}, {isRatMoving}\n")
+        # Initialize empty dataframe
+        self.df = pd.DataFrame(columns=['timesteps', 'alpha', 'bot_number', 'is_rat_moving'])
+
+        # Only load data if not generating new data
+        if not isGenerateData:
+            file_path = os.path.join("report", "data.txt")
+            if os.path.exists(file_path):
+                self.df = self._read_data_file(file_path)
+
+    def generateDataParalelly(self):
+        """Generate data in parallel and save to file"""
+        params = [(round(a / 10, 1), b, m)
+                  for a in range(11)  # 0.0 to 1.0 in 0.1 increments
+                  for b in [1, 2]  # Both bots
+                  for m in [True, False]  # Both movement states
+                  for _ in range(self.points)]  # Number of runs
+
+        # Ensure report directory exists
+        os.makedirs("report", exist_ok=True)
+        file_path = os.path.join("report", "data.txt")
+
+        # Run simulations in parallel
+        with multiprocessing.Pool() as pool, \
+                open(file_path, "w") as f:
+
+            # Process results as they complete
+            for result in tqdm(pool.imap(worker, params),
+                               total=len(params),
+                               desc="Running simulations"):
+                if result:  # Only write successful results
+                    f.write(result)
+                    f.flush()
+
+    def _read_data_file(self, file_path):
+        """Read data from file into DataFrame"""
+        data = []
+        with open(file_path, 'r') as file:
+            next(file)  # Skip header
+            for line in file:
+                line = line.strip()
+                if line:
+                    try:
+                        t, alpha, bot, moving = line.split(',')
+                        data.append((
+                            int(t.strip()),
+                            float(alpha.strip()),
+                            int(bot.strip()),
+                            moving.strip() == 'True'
+                        ))
+                    except ValueError:
+                        continue
+
+        return pd.DataFrame(data, columns=['timesteps', 'alpha', 'bot_number', 'is_rat_moving'])
 
     def _read_data_file(self, file_path):
         """
@@ -37,7 +92,7 @@ class DataService:
                     timesteps = int(parts[0])
                     alpha = float(parts[1])
                     bot_number = int(parts[2])
-                    is_rat_moving = parts[3] == 'True'
+                    is_rat_moving = parts[3].strip() == 'True'
                     data.append((timesteps, alpha, bot_number, is_rat_moving))
 
         columns = ['timesteps', 'alpha', 'bot_number', 'is_rat_moving']
