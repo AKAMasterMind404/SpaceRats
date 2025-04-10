@@ -48,7 +48,7 @@ class DataService:
 
         # Run simulations in parallel
         with multiprocessing.Pool() as pool, \
-                open(file_path, "w") as f:
+                open(file_path, "a+") as f:
 
             # Process results as they complete
             for result in tqdm(pool.imap(worker, params),

@@ -37,15 +37,3 @@ class Bot2(Robot):
             self.isMove = True
             self.sensedCount = 0
         return ping_received
-
-    def initialize_rat_probabilities(self):
-        return super().initialize_rat_probabilities()
-
-    def checkIfBotInCurrentCellAndUpdateRatKnowledge(self):
-        return super().checkIfBotInCurrentCellAndUpdateRatKnowledge()
-
-    def update_rat_probabilities(self, ping_received):
-        return super().update_rat_probabilities(ping_received)
-
-    def calculatePath(self, target_cell: tuple):
-        return super().calculatePath(target_cell)

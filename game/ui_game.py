@@ -5,7 +5,7 @@ import graph.graph as g
 from helpers.draw_grid import draw_grid
 
 
-def ui_game(alpha: float, bot_type, is_rat_moving, isUseIpCells: bool = False, isUsePresetPos: bool = False):
+def ui_game(alpha: float, bot_type, is_rat_moving, isUseIpCells: bool = True, isUsePresetPos: bool = True):
     pygame.init()
 
     screen_width, screen_height = 800, 800  # Default size
