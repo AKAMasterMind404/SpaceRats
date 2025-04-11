@@ -85,7 +85,7 @@ class ManhattanGraph:
                     self.step = 5
                     return
             else:
-                self.currBot.updateProbabilities()
+                self.currBot.updatePingLikelyhoodProbabilities()
 
             if self.is_rat_moving:
                 neighbors = HelperService.getOpenNeighbourListForNode(self, self.curr_rat_pos, isIgnoreDiagonals=True)

@@ -8,7 +8,7 @@ class Bot1(Robot):
     def __init__(self, ship, position):
         super().__init__(ship, position)
 
-    def updateProbabilities(self):
+    def updatePingLikelyhoodProbabilities(self):
         """
         Simulates the rat detector ping:
         1. Computes ping probability based on distance to rat.

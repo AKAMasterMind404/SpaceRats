@@ -23,7 +23,7 @@ class Robot:
 
     # PHASE 2
     @abstractmethod
-    def updateProbabilities(self):
+    def updatePingLikelyhoodProbabilities(self):
         pass
 
     # PHASE 2
@@ -150,6 +150,7 @@ class Robot:
             HelperService.printDebug(f"Error in path calculation: {str(e)}")
             return []
 
+    # PHASE 2
     def _getPingFromCurrCell(self):
         ship = self.ship
 
