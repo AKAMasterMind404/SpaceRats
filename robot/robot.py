@@ -21,6 +21,12 @@ class Robot:
         self.initialize_rat_probabilities()
         self.bot_candidate_nodes = dict()
 
+    # PHASE 2
+    @abstractmethod
+    def updateProbabilities(self):
+        pass
+
+    # PHASE 2
     def moveBot(self):
         if self.path is None:
             target_cell = HelperService.pickACellWithHighestRatProbability(self.rat_probability)
@@ -39,99 +45,8 @@ class Robot:
         draw_grid_internal(self.ship)
         return False
 
-    @abstractmethod
-    def useDetector(self):
-        pass
-
-    def getBotPosition(self):
-        while len(self.bot_candidate_nodes) > 1:
-            if self.ship.t % 2 == 0:
-                # Elimination phase
-                self.eliminate_candidates_on_blocked_neighbours()
-            else:
-                # Movement phase - move to any open neighbor
-                open_neighbors = HelperService.getOpenNeighbourListForNode(
-                    self.ship, self.ship.curr_bot_pos, isIgnoreDiagonals=True)
-
-                if not open_neighbors:
-                    raise ValueError("Bot is trapped!")
-                self.ship.curr_bot_pos = random.choice(open_neighbors)
-            draw_grid_internal(self.ship)
-            time.sleep(cnt.TIME_RATE)
-            self.ship.t += 1
-
-        time.sleep(cnt.TIME_RATE)
-        return list(self.bot_candidate_nodes)[0]
-
-    def eliminate_candidates_on_blocked_neighbours(self):
-        if not self.bot_candidate_nodes:
-            return
-
-        # Get blocked count for current position
-        current_blocked = 8 - len(HelperService.getOpenNeighbourListForNode(
-            self.ship, self.ship.curr_bot_pos))
-
-        new_candidates = set()
-        for node in self.bot_candidate_nodes:
-            node_blocked = 8 - len(HelperService.getOpenNeighbourListForNode(
-                self.ship, node))
-            if node_blocked == current_blocked:
-                new_candidates.add(node)
-
-        # Always include current position if it would have been eliminated
-        if self.ship.curr_bot_pos not in new_candidates:
-            new_candidates.add(self.ship.curr_bot_pos)
-        self.bot_candidate_nodes = new_candidates
-
-    def initialize_rat_probabilities(self):
-        """Initialize uniform probabilities for all open cells (except bot's position)."""
-        open_cells = self.ship.currently_open
-        total_cells = len(open_cells)
-        for cell in open_cells:
-            self.rat_probability[cell] = 1.0 / total_cells
-        return
-
-    def checkIfBotInCurrentCellAndUpdateRatKnowledge(self):
-        if self.position == self.ship.curr_rat_pos:
-            return True
-
-        # Set current cell probability to 0 (rat not here)
-        isRatStationary = not self.ship.is_rat_moving
-        if isRatStationary:
-            self.rat_probability[self.position] = 0
-
-        # Re-normalize: Divide all probabilities by the sum of remaining probabilities
-        total_prob = sum(self.rat_probability.values())
-        for node in self.rat_probability:
-            self.rat_probability[node] /= total_prob
-
-        return False
-
-    def addCellToKnowledgebaseAndReadjustProbability(self):
-        """
-        Only used when rat is moving. Resets zero-probability cells since rat could have moved anywhere.
-        For stationary rats, cells are permanently ruled out (prob=0 never changes).
-        """
-        if not self.ship.is_rat_moving:
-            return  # Never adjust probabilities for stationary rats
-
-        # Rat is moving - reset ALL zero-probability cells
-        MIN_PROB = 1e-5
-        for cell in self.rat_probability:
-            if self.rat_probability[cell] == 0:
-                self.rat_probability[cell] = MIN_PROB
-
-        # Renormalize
-        total_prob = sum(self.rat_probability.values())
-        if total_prob > 0:
-            for cell in self.rat_probability:
-                self.rat_probability[cell] /= total_prob
-        else:
-            # Emergency reset if all probabilities were 0
-            for cell in self.rat_probability:
-                self.rat_probability[cell] = 1.0 / len(self.rat_probability)
-
-    def update_rat_probabilities(self, ping_received):
+    # PHASE 2
+    def _getPingAndRedistributeProbabilities(self, ping_received):
         """
         Updates rat probabilities using Bayes' rule:
         - If ping: Increase prob for nearby cells, decrease for far cells.
@@ -161,6 +76,58 @@ class Robot:
             if self.rat_probability[cell] > 0:
                 self.rat_probability[cell] /= total_prob
 
+    # PHASE 2
+    def initialize_rat_probabilities(self):
+        """Initialize uniform probabilities for all open cells (except bot's position)."""
+        open_cells = self.ship.currently_open
+        total_cells = len(open_cells)
+        for cell in open_cells:
+            self.rat_probability[cell] = 1.0 / total_cells
+        return
+
+    # PHASE 2
+    def checkIfBotInCurrentCellAndUpdateRatKnowledge(self):
+        if self.position == self.ship.curr_rat_pos:
+            return True
+
+        # Set current cell probability to 0 (rat not here)
+        isRatStationary = not self.ship.is_rat_moving
+        if isRatStationary:
+            self.rat_probability[self.position] = 0
+
+        # Re-normalize: Divide all probabilities by the sum of remaining probabilities
+        total_prob = sum(self.rat_probability.values())
+        for node in self.rat_probability:
+            self.rat_probability[node] /= total_prob
+
+        return False
+
+    # PHASE 2
+    def addCellToKnowledgebaseAndReadjustProbability(self):
+        """
+        Only used when rat is moving. Resets zero-probability cells since rat could have moved anywhere.
+        For stationary rats, cells are permanently ruled out (prob=0 never changes).
+        """
+        if not self.ship.is_rat_moving:
+            return  # Never adjust probabilities for stationary rats
+
+        # Rat is moving - reset ALL zero-probability cells
+        MIN_PROB = 1e-5
+        for cell in self.rat_probability:
+            if self.rat_probability[cell] == 0:
+                self.rat_probability[cell] = MIN_PROB
+
+        # Renormalize
+        total_prob = sum(self.rat_probability.values())
+        if total_prob > 0:
+            for cell in self.rat_probability:
+                self.rat_probability[cell] /= total_prob
+        else:
+            # Emergency reset if all probabilities were 0
+            for cell in self.rat_probability:
+                self.rat_probability[cell] = 1.0 / len(self.rat_probability)
+
+    # PHASE 2
     def calculatePath(self, target_cell: tuple):
         ship = self.ship.Ship
         adj_list = list(ship.adjacency())
@@ -182,3 +149,56 @@ class Robot:
         except Exception as e:
             HelperService.printDebug(f"Error in path calculation: {str(e)}")
             return []
+
+    def _getPingFromCurrCell(self):
+        ship = self.ship
+
+        # Calculate ping probability
+        d = HelperService.manhattan_distance(self.position, self.ship.curr_rat_pos)
+        ping_prob = math.exp(-ship.alpha * (d - 1))
+
+        # Simulate ping (random number <= ping_prob)
+        ping_received = random.random() <= ping_prob
+        return ping_received
+
+    # PHASE 1
+    def getBotPosition(self):
+        while len(self.bot_candidate_nodes) > 1:
+            if self.ship.t % 2 == 0:
+                # Elimination phase
+                self.eliminate_candidates_on_blocked_neighbours()
+            else:
+                # Movement phase - move to any open neighbor
+                open_neighbors = HelperService.getOpenNeighbourListForNode(
+                    self.ship, self.ship.curr_bot_pos, isIgnoreDiagonals=True)
+
+                if not open_neighbors:
+                    raise ValueError("Bot is trapped!")
+                self.ship.curr_bot_pos = random.choice(open_neighbors)
+            draw_grid_internal(self.ship)
+            time.sleep(cnt.TIME_RATE)
+            self.ship.t += 1
+
+        time.sleep(cnt.TIME_RATE)
+        return list(self.bot_candidate_nodes)[0]
+
+    # PHASE 1
+    def eliminate_candidates_on_blocked_neighbours(self):
+        if not self.bot_candidate_nodes:
+            return
+
+        # Get blocked count for current position
+        current_blocked = 8 - len(HelperService.getOpenNeighbourListForNode(
+            self.ship, self.ship.curr_bot_pos))
+
+        new_candidates = set()
+        for node in self.bot_candidate_nodes:
+            node_blocked = 8 - len(HelperService.getOpenNeighbourListForNode(
+                self.ship, node))
+            if node_blocked == current_blocked:
+                new_candidates.add(node)
+
+        # Always include current position if it would have been eliminated
+        if self.ship.curr_bot_pos not in new_candidates:
+            new_candidates.add(self.ship.curr_bot_pos)
+        self.bot_candidate_nodes = new_candidates

@@ -1,4 +1,3 @@
-import time
 import networkx as nx
 import random
 import constants as cnt
@@ -86,7 +85,7 @@ class ManhattanGraph:
                     self.step = 5
                     return
             else:
-                self.currBot.useDetector()
+                self.currBot.updateProbabilities()
 
             if self.is_rat_moving:
                 neighbors = HelperService.getOpenNeighbourListForNode(self, self.curr_rat_pos, isIgnoreDiagonals=True)
@@ -109,10 +108,6 @@ class ManhattanGraph:
 
         self.curr_rat_pos = random.choice(list(rat_candidates))
 
-    def diagnoseProbability(self) -> tuple[bool, float]:
-        probability = sum(self.currBot.rat_probability.values())
-        rounded_probability = round(probability, 5)
-        return rounded_probability == 1.0, rounded_probability
 
 def getGraph(screen, bot_type, alpha, is_rat_moving, isUseIpCells: bool = False, isUsePresetPos: bool = False):
     graph = ManhattanGraph(screen=screen, n =cnt.GRID_SIZE, alpha=alpha, bot_type=bot_type, is_rat_moving = is_rat_moving, isUseIpCells=isUseIpCells,
