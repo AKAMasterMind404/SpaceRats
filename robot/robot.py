@@ -59,6 +59,12 @@ class Robot:
     def updateRatProbabilities(self):
         new_prob = {cell: 0.0 for cell in self.ship.currently_open}
 
+        if self.ship.is_rat_moving:
+            noise_level = 0.01  # 1% uniform noise
+            uniform_prob = noise_level / len(self.ship.currently_open)
+            for cell in new_prob:
+                new_prob[cell] = uniform_prob
+
         for cell in self.ship.currently_open:
             # Only zero out if stationary rat and not current rat position
             if cell == self.position and not self.ship.is_rat_moving and cell != self.ship.curr_rat_pos:
@@ -73,10 +79,10 @@ class Robot:
             for neighbor in neighbors:
                 new_prob[cell] += self.rat_probability[neighbor] * transition_prob
 
-        # Constant minimum probability
-        min_prob = 1e-5 if self.ship.is_rat_moving else 0
+        # Constant minimum probability (very small)
+        min_prob = 1e-10 if self.ship.is_rat_moving else 0
 
-        # Normalize probabilities
+        # Normalize
         total = sum(new_prob.values())
         if total > 0:
             for cell in new_prob:
@@ -87,8 +93,7 @@ class Robot:
         ping_received = self.getPingFromCurrCell()
         bot_pos = self.position
 
-        # Fixed probability bounds
-        min_prob = 1e-5 if self.ship.is_rat_moving else 0
+        min_prob = 1e-10 if self.ship.is_rat_moving else 0
         max_prob = 1 - min_prob
 
         total_prob = 0
@@ -96,28 +101,21 @@ class Robot:
 
         for cell in self.ship.currently_open:
             d = HelperService.manhattan_distance(bot_pos, cell)
-
-            # Standard exponential sensor model
             sensor_model = math.exp(-self.ship.alpha * (d - 1))
 
-            # Skip if stationary rat and already ruled out
             if not self.ship.is_rat_moving and self.ping_probability[cell] == 0:
                 probList.append(0)
                 continue
 
-            # Bayesian update
             new_prob = self.ping_probability[cell] * (sensor_model if ping_received else (1 - sensor_model))
             new_prob = max(min(new_prob, max_prob), min_prob)
             probList.append(new_prob)
             total_prob += new_prob
 
-        # Normalize probabilities
+        # Normalize
         if total_prob > 0:
             for i, cell in enumerate(self.ship.currently_open):
                 self.ping_probability[cell] = probList[i] / total_prob
-        else:
-            self.rat_probability = self.getInitialProbabilities()
-            self.ping_probability = self.getInitialProbabilities()
 
     # PHASE 2
     def getInitialProbabilities(self):
