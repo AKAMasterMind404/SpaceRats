@@ -1,14 +1,14 @@
-K_DEBUG_MODE = False
-CURRENT_BOT = 2  # 1 = Dumbest, 2 = Senses 5 times before making a move
-ALPHA = 0.1  # 0 = MOST RESISTANT TO FIRE, 1 = LEAST RESISTANT TO FIRE
+K_DEBUG_MODE = False # Internal debugging
+CURRENT_BOT = 2 # 1 = Dumbest, 2 = Senses MAX_SENSE times before making a move
+ALPHA = 1 # 0 = MOST RESISTANT TO FIRE, 1 = LEAST RESISTANT TO FIRE
 TIME_RATE = 0 # SECONDS OF WAIT BETWEEN EACH T
-IS_RAT_MOVING = True
+IS_RAT_MOVING = True # Toggle to simulate between moving and stationary rat
+MAX_SENSE = 8 # Bot2 - Number of times detection used before moving
+MAX_MOVES_CAP = 6000 # Max threshold of steps allowed before termination
 
 # CELL STATES
 CELL_CLOSED = 1
 CELL_OPENED = 0
-
-CURR_SAMPLE_SET = 1
 
 GRID_SIZE = 30  # Default value, will update dynamically
 MARGIN = 2  # Space between cells

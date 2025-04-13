@@ -54,8 +54,13 @@ class HelperService:
         return closed_count
 
     @staticmethod
-    def pickACellWithHighestRatProbability(probabilityDistribution: dict):
-        cell = max(probabilityDistribution.items(), key=lambda x: x[1])[0]
+    def pickACellWithHighestRatProbability(pd1: dict, pd2: dict):
+        combinedDict = dict()
+        for cell in pd1.keys():
+            v1 = pd1[cell]
+            v2 = pd2[cell]
+            combinedDict[cell] = v1*v2
+        cell = max(combinedDict.items(), key=lambda x: x[1])[0]
         return cell
 
     @staticmethod

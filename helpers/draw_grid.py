@@ -23,12 +23,21 @@ def draw_grid(screen, game, n):
 
             # Apply heatmap coloring if in knowledge base and cell is open
             if game.step == 4:
-                rat_knowledge_base = game.currBot.rat_probability
-                # Find max probability for normalization
-                max_prob = max(rat_knowledge_base.values()) if rat_knowledge_base else 1
-                if node in rat_knowledge_base and game.Ship.nodes[node]['weight'] == cnt.CELL_OPENED:
-                    prob = rat_knowledge_base[node] / max_prob  # Normalize to 0-1
-                    color = getColor(prob)
+                rat_prob = game.currBot.rat_probability
+                ping_prob = game.currBot.ping_probability
+
+                # Compute combined probability (element-wise multiplication)
+                combined_prob = {
+                    cell: rat_prob[cell] * ping_prob[cell]
+                    for cell in rat_prob
+                    if cell in ping_prob
+                }
+
+                # Normalize for visualization (0-1 range)
+                max_prob = max(combined_prob.values()) if combined_prob else 1
+                if node in combined_prob and game.Ship.nodes[node]['weight'] == cnt.CELL_OPENED:
+                    normalized_prob = combined_prob[node] / max_prob
+                    color = getColor(normalized_prob)  # Your existing color mapping
 
             # Special positions override everything
             if game.currBot:

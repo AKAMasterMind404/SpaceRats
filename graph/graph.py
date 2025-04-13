@@ -57,7 +57,7 @@ class ManhattanGraph:
             return
         elif self.step == 2:
             dg.draw_grid_internal(self)
-            currBot = RobotGateway(self, None, cnt.CURRENT_BOT)
+            currBot = RobotGateway(self, None, botType=self.bot_type)
             currBot.bot_candidate_nodes = set(self.currently_open)  # All open cells are initial candidates
             self.currBot = currBot
             self.curr_bot_pos = random.choice(list(self.currBot.bot_candidate_nodes))
@@ -75,7 +75,7 @@ class ManhattanGraph:
             if self.currBot.rat_probability[self.curr_rat_pos] == 0:
                 raise ValueError("Rat probability zero error")
 
-            if self.currBot.position == self.curr_rat_pos:
+            if self.currBot.position == self.curr_rat_pos or self.t > cnt.MAX_MOVES_CAP:
                 self.step = 5
                 return
 
@@ -85,13 +85,13 @@ class ManhattanGraph:
                     self.step = 5
                     return
             else:
-                self.currBot.updatePingLikelyhoodProbabilities()
+                self.currBot.updatePingLikelihoodProbabilities()
 
             if self.is_rat_moving:
                 neighbors = HelperService.getOpenNeighbourListForNode(self, self.curr_rat_pos, isIgnoreDiagonals=True)
                 cell_to_go_rat = random.choice(neighbors)
                 self.curr_rat_pos = cell_to_go_rat
-                self.currBot.addCellToKnowledgebaseAndReadjustProbability()
+                self.currBot.updateRatProbabilities()
 
             # Increase the timestep
             self.t += 1

@@ -4,8 +4,8 @@ from report.report import DataService
 
 if __name__ == "__main__":
     # Configuration
-    points = 50  # Runs per parameter combination
-    generate_data = False # Set to False for plotting
+    points = 100  # Runs per parameter combination
+    generate_data = False # Set to None for UI game
 
     if generate_data is None:
         g = ui_game(alpha=cnt.ALPHA, bot_type=cnt.CURRENT_BOT,
@@ -17,6 +17,6 @@ if __name__ == "__main__":
     else:
         # Plot existing data
         service = DataService(isGenerateData=False, points=0)
-        # service.plot_combined()  # All conditions
+        service.plot_combined()  # All conditions
         service.plot_moving_rat() # Just moving rat
-        # service.plot_stationary_rat() # Just stationary rat
+        service.plot_stationary_rat() # Just stationary rat
