@@ -17,27 +17,37 @@ class Robot:
         self.isMove = False
         self.targetCell = None
         self.isRatMoving = ship.is_rat_moving
-        self.rat_probability = {}  # KB: Maps cells to rat probabilities
-        self.initialize_rat_probabilities()
+        self.rat_probability = self.getInitialProbabilities()
+        self.ping_probability = self.getInitialProbabilities()
         self.bot_candidate_nodes = dict()
 
     # PHASE 2
     @abstractmethod
-    def updatePingLikelyhoodProbabilities(self):
+    def updatePingLikelihoodProbabilities(self):
         pass
 
     # PHASE 2
     def moveBot(self):
         if self.path is None:
-            target_cell = HelperService.pickACellWithHighestRatProbability(self.rat_probability)
+            target_cell = HelperService.pickACellWithHighestRatProbability(
+                self.rat_probability,
+                self.ping_probability
+            )
             self.targetCell = target_cell
             self.path = self.calculatePath(target_cell)
             draw_grid_internal(self.ship)
 
         if len(self.path) > 0:
             self.position = self.path.pop(0)
-            isBotFound = self.checkIfBotInCurrentCellAndUpdateRatKnowledge()
-            if isBotFound: return isBotFound
+
+            if not self.ship.is_rat_moving and self.position != self.ship.curr_rat_pos:
+                # Setting cells along the path as non probable while moving in case of stationary rat
+                self.ping_probability[self.position] = 0
+                self.rat_probability[self.position] = 0
+
+            isBotFound = self.position == self.ship.curr_rat_pos
+            if isBotFound:
+                return isBotFound
         else:
             self.isMove = False
             self.path = None
@@ -46,86 +56,78 @@ class Robot:
         return False
 
     # PHASE 2
-    def _getPingAndRedistributeProbabilities(self, ping_received):
-        """
-        Updates rat probabilities using Bayes' rule:
-        - If ping: Increase prob for nearby cells, decrease for far cells.
-        - If no ping: Do the opposite.
-        - Cells with prob=0 are NEVER updated (rat can't be there).
-        """
-        alpha = self.ship.alpha
+    def updateRatProbabilities(self):
+        new_prob = {cell: 0.0 for cell in self.ship.currently_open}
 
-        total_prob = 0.0
-        for cell in self.rat_probability:
-            isRatStationary = not self.ship.is_rat_moving
-            if cell == self.position and isRatStationary:
-                self.rat_probability[cell] = 0  # Rat can't be in current cell
+        for cell in self.ship.currently_open:
+            # Only zero out if stationary rat and not current rat position
+            if cell == self.position and not self.ship.is_rat_moving and cell != self.ship.curr_rat_pos:
+                new_prob[cell] = 0
                 continue
 
-            # Skip cells already marked as impossible (prob=0)
-            if self.rat_probability[cell] == 0 and isRatStationary:
+            neighbors = HelperService.getOpenNeighbourListForNode(self.ship, cell)
+            if not neighbors:
                 continue
 
-            d = HelperService.manhattan_distance(self.position, cell)
-            likelihood = math.exp(-alpha * (d - 1)) if ping_received else 1 - math.exp(-alpha * (d - 1))
-            self.rat_probability[cell] *= likelihood
-            total_prob += self.rat_probability[cell]
+            transition_prob = 1.0 / len(neighbors)
+            for neighbor in neighbors:
+                new_prob[cell] += self.rat_probability[neighbor] * transition_prob
 
-        # Normalize probabilities (only non-zero cells)
-        for cell in self.rat_probability:
-            if self.rat_probability[cell] > 0:
-                self.rat_probability[cell] /= total_prob
+        # Constant minimum probability
+        min_prob = 1e-5 if self.ship.is_rat_moving else 0
+
+        # Normalize probabilities
+        total = sum(new_prob.values())
+        if total > 0:
+            for cell in new_prob:
+                self.rat_probability[cell] = max(new_prob[cell] / total, min_prob)
 
     # PHASE 2
-    def initialize_rat_probabilities(self):
+    def getPingAndUpdatePingLikelyhood(self):
+        ping_received = self.getPingFromCurrCell()
+        bot_pos = self.position
+
+        # Fixed probability bounds
+        min_prob = 1e-5 if self.ship.is_rat_moving else 0
+        max_prob = 1 - min_prob
+
+        total_prob = 0
+        probList = []
+
+        for cell in self.ship.currently_open:
+            d = HelperService.manhattan_distance(bot_pos, cell)
+
+            # Standard exponential sensor model
+            sensor_model = math.exp(-self.ship.alpha * (d - 1))
+
+            # Skip if stationary rat and already ruled out
+            if not self.ship.is_rat_moving and self.ping_probability[cell] == 0:
+                probList.append(0)
+                continue
+
+            # Bayesian update
+            new_prob = self.ping_probability[cell] * (sensor_model if ping_received else (1 - sensor_model))
+            new_prob = max(min(new_prob, max_prob), min_prob)
+            probList.append(new_prob)
+            total_prob += new_prob
+
+        # Normalize probabilities
+        if total_prob > 0:
+            for i, cell in enumerate(self.ship.currently_open):
+                self.ping_probability[cell] = probList[i] / total_prob
+        else:
+            self.rat_probability = self.getInitialProbabilities()
+            self.ping_probability = self.getInitialProbabilities()
+
+    # PHASE 2
+    def getInitialProbabilities(self):
         """Initialize uniform probabilities for all open cells (except bot's position)."""
         open_cells = self.ship.currently_open
         total_cells = len(open_cells)
+        newDict = dict()
         for cell in open_cells:
-            self.rat_probability[cell] = 1.0 / total_cells
-        return
-
-    # PHASE 2
-    def checkIfBotInCurrentCellAndUpdateRatKnowledge(self):
-        if self.position == self.ship.curr_rat_pos:
-            return True
-
-        # Set current cell probability to 0 (rat not here)
-        isRatStationary = not self.ship.is_rat_moving
-        if isRatStationary:
-            self.rat_probability[self.position] = 0
-
-        # Re-normalize: Divide all probabilities by the sum of remaining probabilities
-        total_prob = sum(self.rat_probability.values())
-        for node in self.rat_probability:
-            self.rat_probability[node] /= total_prob
-
-        return False
-
-    # PHASE 2
-    def addCellToKnowledgebaseAndReadjustProbability(self):
-        """
-        Only used when rat is moving. Resets zero-probability cells since rat could have moved anywhere.
-        For stationary rats, cells are permanently ruled out (prob=0 never changes).
-        """
-        if not self.ship.is_rat_moving:
-            return  # Never adjust probabilities for stationary rats
-
-        # Rat is moving - reset ALL zero-probability cells
-        MIN_PROB = 1e-5
-        for cell in self.rat_probability:
-            if self.rat_probability[cell] == 0:
-                self.rat_probability[cell] = MIN_PROB
-
-        # Renormalize
-        total_prob = sum(self.rat_probability.values())
-        if total_prob > 0:
-            for cell in self.rat_probability:
-                self.rat_probability[cell] /= total_prob
-        else:
-            # Emergency reset if all probabilities were 0
-            for cell in self.rat_probability:
-                self.rat_probability[cell] = 1.0 / len(self.rat_probability)
+            newDict[cell] = 1.0 / total_cells
+        return newDict
 
     # PHASE 2
     def calculatePath(self, target_cell: tuple):
@@ -151,12 +153,10 @@ class Robot:
             return []
 
     # PHASE 2
-    def _getPingFromCurrCell(self):
-        ship = self.ship
-
+    def getPingFromCurrCell(self):
         # Calculate ping probability
         d = HelperService.manhattan_distance(self.position, self.ship.curr_rat_pos)
-        ping_prob = math.exp(-ship.alpha * (d - 1))
+        ping_prob = math.exp(-self.ship.alpha * (d - 1))
 
         # Simulate ping (random number <= ping_prob)
         ping_received = random.random() <= ping_prob
