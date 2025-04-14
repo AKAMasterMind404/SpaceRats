@@ -93,6 +93,8 @@ class Robot:
         ping_received = self.getPingFromCurrCell()
         bot_pos = self.position
 
+        # We replace a cell with min_prob if it was previously bots location
+        # This is done so that the cell could be considered as an option after bot leaves it
         min_prob = 1e-10 if self.ship.is_rat_moving else 0
         max_prob = 1 - min_prob
 
