@@ -11,7 +11,7 @@ from robot.robot import Robot
 class ManhattanGraph:
     def __init__(self, screen, n, alpha, bot_type, is_rat_moving, isUseIpCells: bool = False, isUsePresetPos: bool = False):
         self.n = n  # Dimension of rhe 2d graph
-        self.alpha = alpha  # Flammability
+        self.alpha = alpha  # Detection sensitivity
         self.bot_type = bot_type  # bot type
         self.is_rat_moving: bool = is_rat_moving
         self.game_over = False  # Indicates whether game may or may not be proceeded
@@ -23,9 +23,6 @@ class ManhattanGraph:
         self.currently_open = set()  # Nodes that are 'open', # Zero indicates 'open' and One indicates 'close'
         self.dead_ends = []  # cells that have 3 closed cells around them
         self.step = 1  # Track algorithm step
-        self.open_ship_initialized = False  # Indicates whether step is completed or not, useful in preset metric graphs
-        self.fire_nodes = set()  # Nodes currently under fire
-        self.nodes_with_burning_neighbours = dict()  # Nodes that are adjacent to atleast one node on 'fire'
         self.curr_bot_pos = None  # Current position of bot
         self.curr_rat_pos = None  # Current and final button position
         self.isUseIpCells = isUseIpCells  # A boolean flag indicating opened cells are already defined
@@ -64,27 +61,31 @@ class ManhattanGraph:
             self.step = 3
             return
         elif self.step == 3:
+            # PHASE 1
             self.currBot.position = self.currBot.getBotPosition()
             self.t = 0
             self.step = 4
             self.placeSpaceRat()
             return
         elif self.step == 4:
-            # return
-            self.curr_bot_pos = None  # Moving to Bot1 / Bot2 logic
+            # PHASE 2
+            self.curr_bot_pos = None
             if self.currBot.rat_probability[self.curr_rat_pos] == 0:
                 raise ValueError("Rat probability zero error")
 
             if self.currBot.position == self.curr_rat_pos or self.t > cnt.MAX_MOVES_CAP:
+            # Code halt condition if too many timesteps are received or if rat is found
                 self.step = 5
                 return
 
             if self.currBot.isMove:
                 isReached = self.currBot.moveBot()
+                # Checks if bot is found whilst reaching the final target
                 if isReached:
                     self.step = 5
                     return
             else:
+                # Updates ping knowledge base
                 self.currBot.updatePingLikelihoodProbabilities()
 
             if self.is_rat_moving:
@@ -92,7 +93,6 @@ class ManhattanGraph:
                 cell_to_go_rat = random.choice(neighbors)
                 self.curr_rat_pos = cell_to_go_rat
                 self.currBot.updateRatProbabilities()
-
             # Increase the timestep
             self.t += 1
 
@@ -105,7 +105,6 @@ class ManhattanGraph:
     def placeSpaceRat(self):
         rat_candidates = self.currently_open.copy()
         rat_candidates.remove(self.curr_bot_pos)
-
         self.curr_rat_pos = random.choice(list(rat_candidates))
 
 
