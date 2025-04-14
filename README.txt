@@ -1,4 +1,6 @@
 ### Welcome to the Project - Spacerats! ###
+The project can be found at: https://github.com/AKAMasterMind404/SpaceRats
+Kindly refer to the branch named: topic/atharv/2.0 for the final submission
 
 The project has been made by:
 Atharv Karbhari - NetId (amk546)
