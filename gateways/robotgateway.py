@@ -1,8 +1,7 @@
-from robot import robot as r
-from robot import bot1 as b1
-from robot import bot2 as b2
+from bot import bot1 as b1
+from bot import bot2 as b2
 
-def RobotGateway(ship, position: tuple, botType: int) -> r.Robot:
+def RobotGateway(ship, position: tuple, botType: int):
     if botType == 1:
         robot = b1.Bot1(ship, position)
     elif botType == 2:

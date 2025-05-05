@@ -1,6 +1,5 @@
-from robot.robot import Robot
 import constants as cnt
-
+from bot.robot import Robot
 
 class Bot2(Robot):
     def __init__(self, ship, position):

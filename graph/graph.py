@@ -5,8 +5,7 @@ import helpers.draw_grid as dg
 from gateways.robotgateway import RobotGateway
 from graph.sample.sample1 import dead_ends_1, currently_open_1
 from helpers.generic import HelperService
-from robot.robot import Robot
-
+from bot.robot import Robot
 
 class ManhattanGraph:
     def __init__(self, screen, n, alpha, bot_type, is_rat_moving, isUseIpCells: bool = False, isUsePresetPos: bool = False):
